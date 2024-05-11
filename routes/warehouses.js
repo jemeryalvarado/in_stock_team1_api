@@ -2,7 +2,6 @@ const knex = require('knex')(require('../knexfile'));
 const express = require("express");
 const router = express.Router();
 
-<<<<<<< HEAD
 router.get("/", async(_req, res) => {
   try{
     const all_warehouses = await knex('warehouses');
@@ -29,7 +28,7 @@ router.get("/", async(_req, res) => {
       res.status(400).send(`Error retrieving Users: ${err}`)
     }
   });
-=======
+  
 router.put('/:id', async(_req, res) => {
   try {
     const warehouseId = _req.params.id;
@@ -55,6 +54,5 @@ router.put('/:id', async(_req, res) => {
     res.status(400).json(`Error updating warehouse: ${err}`);
   }
 });
->>>>>>> main
 
 module.exports = router;
