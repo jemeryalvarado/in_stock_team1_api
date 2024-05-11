@@ -8,7 +8,8 @@ const router = express.Router();
       const warehouseId = _req.params.id;
       const warehouse = data.find(warehouse => warehouse.id == warehouseId)
       if (warehouse) {
-        res.status(200).json(warehouse)
+        const { created_at, updated_at, ...warehouseWithoutTimeStamps } = warehouse;
+        res.status(200).json(warehouseWithoutTimeStamps)
       } else {
         res.status(404).json(`Warehouse id: ${warehouseId} does not exist`)
       }
