@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const apiRoutes = require("./routes/endpoints.js");
+const warehouses = require("./routes/warehouses.js");
+const inventories = require("./routes/inventories.js");
 
 app.use(express.json());
 
@@ -16,6 +18,8 @@ app.use((req, res, next) => {
 });
 
 app.use("/api", apiRoutes);
+app.use("/warehouses", warehouses);
+app.use("/inventories", inventories);
 
 app.listen(8080, () => {
   console.log("Server is working on http://localhost:8080");

@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "knex migrate:latest",
+    "migrate:down": "knex migrate:down",
+    "migrate:rollback": "knex migrate:rollback",
+    "seed": "knex seed:run"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +20,7 @@
     "express": "^4.19.2",
     "knex": "^3.1.0",
     "mysql2": "^3.9.7",
+    "node": "^20.13.1",
     "uuid": "^9.0.1"
   }
 }
