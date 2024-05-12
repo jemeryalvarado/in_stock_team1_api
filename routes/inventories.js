@@ -2,30 +2,51 @@ const knex = require('knex')(require('../knexfile'));
 const express = require("express");
 const router = express.Router();
 
-router.put('/:id', async (_req, res) => {
+router.get("/", async (_req, res) => {
     try {
-      const data = await knex('inventories');
+      const all_inventories = await knex('inventories');
+      const all_inventories_noTimeStamps = all_inventories.map(({created_at, updated_at, ...cleanedData})=>cleanedData);
+      res.status(200).json(all_inventories_noTimeStamps);
+    } catch (error) {
+      res.send(`Error getting inventories: ${error}`);
+    }   
+  }
+);
+
+router.put('/:id', async(_req, res) => {
+
+    const { warehouse_id, quantity } = _req.body
+
+    try {
       const inventoryId = _req.params.id;
-      const inventory = data.find(inventory => inventory.id == inventoryId)
-      if (inventory) {
-        const { created_at, updated_at, ...warehouseWithoutTimeStamps } = warehouse;
-        res.status(200).json(warehouseWithoutTimeStamps)
-      } else {
-        res.status(404).json(`Warehouse id: ${warehouseId} does not exist`)
+      const checkInventoryId = await knex('inventories').where({ id: inventoryId }).first();
+      if (!checkInventoryId) {
+        return res.status(404).json(`Inventory with id ${inventoryId} not found.`);
+      }
+
+      const requiredProps = ["warehouse_id", "item_name", "description", "category", "status", "quantity"]
+      const missingProps = requiredProps.filter(prop => !_req.body.hasOwnProperty(prop));
+      if (missingProps.length > 0) {
+        return res.status(400).json({ error: `Missing properties: ${missingProps.join(', ')}` });
+      }
+
+      const hasMatchingWarehouseId = await knex('warehouses').where({ id: warehouse_id }).first();
+      if (!hasMatchingWarehouseId) {
+        return res.status(400).json(`Warehouse with id ${warehouse_id} not found.`);
+      }
+
+      if (!(Number.isInteger(quantity))) {
+        return res.status(400).json('Quantity must be a number');
+      }
+
+      const newResponse = await knex('inventories').where({ id: inventoryId }).update(_req.body);
+      if (newResponse) {
+        res.status(200).json({ updatedCount: newResponse });
       }
     } catch(err) {
-      res.status(400).send(`Error retrieving Users: ${err}`)
+      res.status(400).json(`Error updating inventory: ${err}`);
     }
-  });
-
-router.get("/", async (_req, res) => {
-  try {
-    const all_inventories = await knex('inventories');
-    const all_inventories_noTimeStamps = all_inventories.map(({created_at, updated_at, ...cleanedData})=>cleanedData);
-    res.status(200).json(all_inventories_noTimeStamps);
-  } catch (error) {
-    res.send(`Error getting inventories: ${error}`);
-  }   
-});
+  }
+);
 
 module.exports = router;
