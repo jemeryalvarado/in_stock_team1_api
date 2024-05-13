@@ -13,6 +13,29 @@ router.get("/", async (_req, res) => {
   }
 );
 
+
+router.get("/:id", async (_req, res) => {
+  try {
+    const inventoryId = _req.params.id;
+
+    //using .join method to retrieve the inventory item and match it to its corresponding warehouse name
+    const thisInventoy = await knex('inventories')
+    .select('inventories.id as id','warehouse_name','item_name','description','category','status','quantity')
+    .join('warehouses','warehouses.id','inventories.warehouse_id')
+    .where('inventories.id', inventoryId)
+    .first();
+
+    if (!thisInventoy){
+      return res.status(404).json(`Inventory item with id ${inventoryId} doses not exist.`);
+    };
+  
+    res.status(200).json(thisInventoy);
+
+  }catch(error){
+    res.status(500).send(`Error retreiving the inventory: ${error} }`);
+  };
+});
+
 router.put('/:id', async(_req, res) => {
 
     const { warehouse_id, quantity } = _req.body
@@ -49,4 +72,4 @@ router.put('/:id', async(_req, res) => {
   }
 );
 
-module.exports = router;
+module.exports = router
