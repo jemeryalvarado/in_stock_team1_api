@@ -62,9 +62,10 @@ router.put('/:id', async(_req, res) => {
         return res.status(400).json('Quantity must be a number');
       }
 
-      const newResponse = await knex('inventories').where({ id: inventoryId }).update(_req.body);
-      if (newResponse) {
-        res.status(200).json({ updatedCount: newResponse });
+      const newRequest = await knex('inventories').where({ id: inventoryId }).update(_req.body);
+      if (newRequest) {
+        const { updated_at, created_at, ...response} = await knex('inventories').where({ id: inventoryId }).first();
+        res.status(200).json(response);
       }
     } catch(err) {
       res.status(400).json(`Error updating inventory: ${err}`);
