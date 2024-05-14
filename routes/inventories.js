@@ -13,17 +13,16 @@ router.get("/", async (_req, res) => {
   }
 );
 
-
 router.get("/:id", async (_req, res) => {
   try {
     const inventoryId = _req.params.id;
 
     //using .join method to retrieve the inventory item and match it to its corresponding warehouse name
     const thisInventoy = await knex('inventories')
-    .select('inventories.id as id','warehouse_name','item_name','description','category','status','quantity')
-    .join('warehouses','warehouses.id','inventories.warehouse_id')
-    .where('inventories.id', inventoryId)
-    .first();
+      .select('inventories.id as id','warehouse_name','item_name','description','category','status','quantity')
+      .join('warehouses','warehouses.id','inventories.warehouse_id')
+      .where('inventories.id', inventoryId)
+      .first();
 
     if (!thisInventoy){
       return res.status(404).json(`Inventory item with id ${inventoryId} doses not exist.`);
@@ -73,4 +72,28 @@ router.put('/:id', async(_req, res) => {
   }
 );
 
-module.exports = router
+router.post("/", async (_req, res) => {
+  if (
+    !_req.body.warehouse_id ||
+    !_req.body.item_name || 
+    !_req.body.description || 
+    !_req.body.category ||
+    !_req.body.status ||
+    !_req.body.quantity
+  ) {
+    return res.status(400).json({
+      message: "Please ensure all the information provided",
+    });
+  }
+  
+  try {
+    const result = await knex("inventories").insert(_req.body);
+    const newItemId = result[0];
+    const createdItem = await knex('inventories').where({ id: newItemId});
+    res.status(201).json(createdItem);
+  } catch (error) {
+    res.status(500).send(`Unable to create new item: ${error}`);
+  }
+});
+
+module.exports = router;
