@@ -1,5 +1,7 @@
 const knex = require('knex')(require('../knexfile'));
 const express = require("express");
+const { route } = require('./warehouses');
+const knexfile = require('../knexfile');
 const router = express.Router();
 
 router.get("/", async (_req, res) => {
@@ -12,7 +14,6 @@ router.get("/", async (_req, res) => {
     }   
   }
 );
-
 
 router.get("/:id", async (_req, res) => {
   try {
@@ -73,4 +74,21 @@ router.put('/:id', async(_req, res) => {
   }
 );
 
-module.exports = router
+router.delete('/:id', async (_req, res) => {
+  try {
+    const inventoryId = _req.params.id;
+
+    const inventoryExists = await knex('inventories').where({ id: inventoryId }).first();
+    if (!inventoryExists) {
+      return res.status(404).json({ error: `Inventory item with id ${inventoryId} does not exist.`});
+    }
+
+    await knex('inventories').where({ id: inventoryId }).del();
+
+    res.sendStatus(204);
+  } catch (error) {
+    res.status(500).json({ error: `Error deleting inventory: ${error}` });
+  }
+});
+
+module.exports = router;
