@@ -31,21 +31,27 @@ router.get('/:id', async (_req, res) => {
 router.put('/:id', async(_req, res) => {
   try {
     const warehouseId = _req.params.id;
-    const data = {
-      warehouse_name: "Brooklyn",
-      address: "918 Morris Lane",
-      city: "Brooklyn",
-      country: "USA",
-      contact_name: "Parmin Aujla",
-      contact_position: "Warehouse Manager",
-      contact_phone: "+1 (646) 123-1234",
-      contact_email: "paujla@instock.com"
-    };
 
-    const result = await knex('warehouses').where({ id: warehouseId }).update(_req.body);
+    const requiredProps = ["warehouse_name", "street_address", "city", "country", "contact_name", "position", "phone_number","email"]
+    const missingProps = requiredProps.filter(prop => !_req.body.hasOwnProperty(prop));
+    if (missingProps.length > 0) {
+      return res.status(400).json({ error: `Missing properties: ${missingProps.join(', ')}` });
+    }
 
-    if (result) {
-      res.status(200).json({ updatedCount: result });
+    const phoneNumberValidator = /^\d+$/;
+    if (!phoneNumberValidator.test(_req.body.phone_number)) {
+      return res.status(400).json({ error: "Phone number must contain only integers." });
+    }
+
+    const emailValidator = /\S+@\S+\.\S+/;
+    if (!emailValidator.test(_req.body.email)) {
+      return res.status(400).json({ error: "Invalid email format." });
+    }
+
+    const updateResult = await knex('warehouses').where({ id: warehouseId }).update(_req.body);
+    if (updateResult) {
+      const updatedWarehouse = await knex('warehouses').where({ id: warehouseId }).first();
+      res.status(200).json({ updatedWarehouse });
     } else {
       res.status(404).json(`Warehouse with id ${warehouseId} not found.`);
     }
