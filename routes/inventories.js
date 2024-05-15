@@ -91,6 +91,8 @@ router.post("/", async (_req, res) => {
   const { warehouse_id, quantity } = _req.body
 
   try {
+    //query mysql information_schema db for instock db inventories table columns configured as notNullable
+    //excluding id column
     const notNullable = await knex('COLUMNS').withSchema('INFORMATION_SCHEMA')
       .select('COLUMN_NAME')
       .where('TABLE_SCHEMA', 'instock')
@@ -107,7 +109,7 @@ router.post("/", async (_req, res) => {
     if (nullProperty.length > 0) {
       return res.status(400).json({ error: `Properties: ${nullProperty.join(', ')} value must not be null` });
     }
-    
+
     if (!(Number.isInteger(quantity))) {
       return res.status(400).json({error: 'Quantity must be a number'});
     }
