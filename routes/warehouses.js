@@ -67,15 +67,13 @@ router.delete(':/id', async (_req, res) => {
     const warehouseExists = await knex('warehouses').where({ id: warehouseId}).first();
     if (!warehouseExists) {
       return res.status(404).json({ error: `Warehouse with id ${warehouseId} does not exist.` });
+    } else {
+      // deletes inventories associated with warehouse
+      await knex('inventories').where({ warehouse_id: warehouseId }).select('*').del()
+      // deletes warehouse
+      && knex('warehouses').where({ id: warehouseId }).del();
+      res.sendStatus(204);
     }
-
-    // deletes inventories associated with warehouse
-    await knex('inventories').where({ warehouse_id: warehouseId }).del();
-
-    // deletes warehouse
-    await knex('warehouses').where({ id: warehouseId }).del();
-
-    res.sendStatus(204);
   } catch (error) {
     res.status(500).json({ error: `Error deleting warehouse: ${error}` });
   }
