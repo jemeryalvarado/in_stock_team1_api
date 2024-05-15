@@ -72,20 +72,6 @@ router.put('/:id', async(_req, res) => {
   }
 );
 
-router.get('/schema/notnullable', async (_req, res) => {
-  try{
-    const notNullable = await knex('COLUMNS').withSchema('INFORMATION_SCHEMA')
-      .select('column_name')
-      .where('table_schema', 'instock')
-      .andWhere('table_name', 'inventories')
-      .andWhere('IS_NULLABLE', 'NO')
-    const array = notNullable.map(column => column.COLUMN_NAME);
-    res.send(array);
-  } catch (error) {
-
-  }
-});
-
 router.post("/", async (_req, res) => {
 
   const { warehouse_id, quantity } = _req.body
