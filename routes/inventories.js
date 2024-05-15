@@ -72,25 +72,60 @@ router.put('/:id', async(_req, res) => {
   }
 );
 
-router.post("/", async (_req, res) => {
-  if (
-    !_req.body.warehouse_id ||
-    !_req.body.item_name || 
-    !_req.body.description || 
-    !_req.body.category ||
-    !_req.body.status ||
-    !_req.body.quantity
-  ) {
-    return res.status(400).json({
-      message: "Please ensure all the information provided",
-    });
+router.get('/schema/notnullable', async (_req, res) => {
+  try{
+    const notNullable = await knex('COLUMNS').withSchema('INFORMATION_SCHEMA')
+      .select('column_name')
+      .where('table_schema', 'instock')
+      .andWhere('table_name', 'inventories')
+      .andWhere('IS_NULLABLE', 'NO')
+    const array = notNullable.map(column => column.COLUMN_NAME);
+    res.send(array);
+  } catch (error) {
+
   }
-  
+});
+
+router.post("/", async (_req, res) => {
+
+  const { warehouse_id, quantity } = _req.body
+
   try {
-    const result = await knex("inventories").insert(_req.body);
+    const notNullable = await knex('COLUMNS').withSchema('INFORMATION_SCHEMA')
+      .select('COLUMN_NAME')
+      .where('TABLE_SCHEMA', 'instock')
+      .andWhere('TABLE_NAME', 'inventories')
+      .whereNot('COLUMN_NAME', 'id')
+      .andWhere('IS_NULLABLE', 'NO')
+    const arrayNotNullable = notNullable.map(column => column.COLUMN_NAME);
+
+    //Check if a property value is null. To explicitly convert its return value (or any expression in general) 
+    //to the corresponding boolean value, use a double NOT operator (!!) or the Boolean constructor.
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_NOT
+    const nullProperty = arrayNotNullable.filter(prop => !!_req.body[prop] === false);
+    console.log(nullProperty);
+    if (nullProperty.length > 0) {
+      return res.status(400).json({ error: `Properties: ${nullProperty.join(', ')} value must not be null` });
+    }
+    
+    if (!(Number.isInteger(quantity))) {
+      return res.status(400).json({error: 'Quantity must be a number'});
+    }
+
+    if (!warehouse_id) {
+      return res.status(400).json({error: 'Missing warehouse_id property'})
+    } else {
+      const hasMatchingWarehouseId = await knex('warehouses').where({ id: warehouse_id }).first();
+      if (!hasMatchingWarehouseId) {
+        return res.status(400).json(`Warehouse with id ${warehouse_id} not found.`);
+      }
+    }
+
+    const result = await knex('INVENTORIES').insert(_req.body);
     const newItemId = result[0];
-    const createdItem = await knex('inventories').where({ id: newItemId});
-    res.status(201).json(createdItem);
+    const { updated_at, created_at, ...response} = await knex('INVENTORIES').where({ id: newItemId}).first();
+    res.status(201).json(response);
+
   } catch (error) {
     res.status(500).send(`Unable to create new item: ${error}`);
   }
