@@ -60,4 +60,54 @@ router.put('/:id', async(_req, res) => {
   }
 });
 
+router.post("/", (req, res) => {
+  const {
+    warehouse_name,
+    address,
+    city,
+    country,
+    contact_name,
+    contact_position,
+    contact_phone,
+    contact_email
+  } = req.body;
+
+  const requiredProps = ["warehouse_name", "address", "city", "country", "contact_name", "contact_position", "contact_phone", "contact_email"];
+  const missingProps = requiredProps.filter(prop => !req.body.hasOwnProperty(prop));
+  if (missingProps.length > 0) {
+    return res.status(400).json({ error: `Missing properties: ${missingProps.join(', ')}` });
+  }
+
+  const phoneNumberValidator = /^\d+$/;
+  if (!phoneNumberValidator.test(req.body.contact_phone)) {
+    console.log(req.body.contact_phone)
+    return res.status(400).json({ error: "Phone number must contain only integers." });
+  }
+  const emailValidator = /\S+@\S+\.\S+/;
+  if (!emailValidator.test(contact_email)) {
+    return res.status(400).json({ error: "Invalid email format." });
+  }
+
+  knex("warehouses").insert({
+    warehouse_name,
+    address,
+    city,
+    country,
+    contact_name,
+    contact_position,
+    contact_phone,
+    contact_email
+  })
+  .then(([newWarehouseId]) => {
+    return knex("warehouses").where({ id: newWarehouseId }).first();
+  })
+  .then(newWarehouse => {
+    res.status(201).json(newWarehouse);
+  })
+  .catch(error => {
+    console.error("Error creating warehouse:", error); 
+    res.status(500).json({ error: "Error creating warehouse" });
+  });
+});
+
 module.exports = router;
