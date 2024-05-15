@@ -91,7 +91,6 @@ router.post("/", async (_req, res) => {
     //to the corresponding boolean value, use a double NOT operator (!!) or the Boolean constructor.
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_NOT
     const nullProperty = arrayNotNullable.filter(prop => !!_req.body[prop] === false);
-    console.log(nullProperty);
     if (nullProperty.length > 0) {
       return res.status(400).json({ error: `Properties: ${nullProperty.join(', ')} value must not be null` });
     }
