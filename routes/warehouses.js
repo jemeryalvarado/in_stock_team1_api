@@ -108,7 +108,7 @@ router.post("/", (req, res) => {
     console.error("Error creating warehouse:", error); 
     res.status(500).json({ error: "Error creating warehouse" });
   });
-
+});
 router.delete('/:id', async (_req, res) => {
   try {
     const warehouseId = _req.params.id;
