@@ -1,5 +1,7 @@
 const knex = require('knex')(require('../knexfile'));
 const express = require("express");
+const { route } = require('./warehouses');
+const knexfile = require('../knexfile');
 const router = express.Router();
 
 router.get("/", async (_req, res) => {
@@ -37,40 +39,57 @@ router.get("/:id", async (_req, res) => {
 
 router.put('/:id', async(_req, res) => {
 
-    const { warehouse_id, quantity } = _req.body
+  const { warehouse_id, quantity } = _req.body
 
-    try {
-      const inventoryId = _req.params.id;
-      const checkInventoryId = await knex('inventories').where({ id: inventoryId }).first();
-      if (!checkInventoryId) {
-        return res.status(404).json(`Inventory with id ${inventoryId} not found.`);
-      }
-
-      const requiredProps = ["warehouse_id", "item_name", "description", "category", "status", "quantity"]
-      const missingProps = requiredProps.filter(prop => !_req.body.hasOwnProperty(prop));
-      if (missingProps.length > 0) {
-        return res.status(400).json({ error: `Missing properties: ${missingProps.join(', ')}` });
-      }
-
-      const hasMatchingWarehouseId = await knex('warehouses').where({ id: warehouse_id }).first();
-      if (!hasMatchingWarehouseId) {
-        return res.status(400).json(`Warehouse with id ${warehouse_id} not found.`);
-      }
-
-      if (!(Number.isInteger(quantity))) {
-        return res.status(400).json('Quantity must be a number');
-      }
-
-      const newRequest = await knex('inventories').where({ id: inventoryId }).update(_req.body);
-      if (newRequest) {
-        const { updated_at, created_at, ...response} = await knex('inventories').where({ id: inventoryId }).first();
-        res.status(200).json(response);
-      }
-    } catch(err) {
-      res.status(400).json(`Error updating inventory: ${err}`);
+  try {
+    const inventoryId = _req.params.id;
+    const checkInventoryId = await knex('inventories').where({ id: inventoryId }).first();
+    if (!checkInventoryId) {
+      return res.status(404).json(`Inventory with id ${inventoryId} not found.`);
     }
+
+    const requiredProps = ["warehouse_id", "item_name", "description", "category", "status", "quantity"]
+    const missingProps = requiredProps.filter(prop => !_req.body.hasOwnProperty(prop));
+    if (missingProps.length > 0) {
+      return res.status(400).json({ error: `Missing properties: ${missingProps.join(', ')}` });
+    }
+
+    const hasMatchingWarehouseId = await knex('warehouses').where({ id: warehouse_id }).first();
+    if (!hasMatchingWarehouseId) {
+      return res.status(400).json(`Warehouse with id ${warehouse_id} not found.`);
+    }
+
+    if (!(Number.isInteger(quantity))) {
+      return res.status(400).json('Quantity must be a number');
+    }
+
+    const newRequest = await knex('inventories').where({ id: inventoryId }).update(_req.body);
+    if (newRequest) {
+      const { updated_at, created_at, ...response} = await knex('inventories').where({ id: inventoryId }).first();
+      res.status(200).json(response);
+    }
+  } catch(err) {
+    res.status(400).json(`Error updating inventory: ${err}`);
   }
-);
+});
+
+router.delete('/:id', async (_req, res) => {
+  try {
+    const inventoryId = _req.params.id;
+
+    const inventoryExists = await knex('inventories').where({ id: inventoryId }).first();
+    
+    if (!inventoryExists) {
+      return res.status(404).json({ error: `Inventory item with id ${inventoryId} does not exist.`});
+    } else {
+      await knex('inventories').where({ id: inventoryId }).del();
+      res.sendStatus(204);
+    }
+  } catch (error) {
+    res.status(500).json({ error: `Error deleting inventory: ${error}` });
+  }
+});
+
 
 router.post("/", async (_req, res) => {
 
