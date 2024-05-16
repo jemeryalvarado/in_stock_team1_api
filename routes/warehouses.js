@@ -108,6 +108,25 @@ router.post("/", (req, res) => {
     console.error("Error creating warehouse:", error); 
     res.status(500).json({ error: "Error creating warehouse" });
   });
+
+router.delete('/:id', async (_req, res) => {
+  try {
+    const warehouseId = _req.params.id;
+
+    const warehouseExists = await knex('warehouses').where({ id: warehouseId}).first();
+    if (!warehouseExists) {
+      return res.status(404).json({ error: `Warehouse with id ${warehouseId} does not exist.` });
+    } else {
+      // deletes inventories associated with warehouse
+      await knex('inventories').where({ warehouse_id: warehouseId }).select('*').del()
+      // deletes warehouse
+      && knex('warehouses').where({ id: warehouseId }).del();
+      res.sendStatus(204);
+    }
+  } catch (error) {
+    res.status(500).json({ error: `Error deleting warehouse: ${error}` });
+  }
+
 });
 
 module.exports = router;
