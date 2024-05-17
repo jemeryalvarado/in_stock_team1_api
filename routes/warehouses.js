@@ -28,6 +28,26 @@ router.get('/:id', async (_req, res) => {
   }
 });
 
+router.get("/:id/inventories", (req,res)=>{
+  const warehouseId= req.params.id;
+
+  knex('warehouses').where({id: warehouseId}).first()
+    .then(warehouse =>{
+      if(warehouse){
+        return knex('inventories').where({ warehouse_id: warehouseId }).select('id', 'item_name', 'description', 'category', 'status', 'quantity');
+      }
+      else{
+        return res.status(404).json({ error: `Warehouse with id ${warehouseId} not found.` });
+      }
+    })
+    .then(inventories=>{
+      res.status(200).json(inventories);
+    })
+    .catch(error=>{
+      res.status(500).json({ error: `Error retrieving inventories: ${error}` });
+    });
+});
+
 router.put('/:id', async(_req, res) => {
   try {
     const warehouseId = _req.params.id;
