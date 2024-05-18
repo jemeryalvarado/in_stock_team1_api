@@ -41,7 +41,7 @@ router.get("/:id/inventories", (req, res) => {
       if (warehouse) {
         return knex("inventories")
           .where({ warehouse_id: warehouseId })
-          .select("id","item_name", "description", "category", "status", "quantity");
+          .select("id","item_name", "category", "status", "quantity");
       } else {
         res
           .status(404)
