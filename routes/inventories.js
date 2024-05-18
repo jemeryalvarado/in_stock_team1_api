@@ -4,7 +4,7 @@ const { route } = require('./warehouses');
 const knexfile = require('../knexfile');
 const router = express.Router();
 
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
     try {
       const all_inventories = await knex('inventories');
       const all_inventories_noTimeStamps = all_inventories.map(({created_at, updated_at, ...cleanedData})=>cleanedData);
@@ -15,9 +15,9 @@ router.get("/", async (_req, res) => {
   }
 );
 
-router.get("/:id", async (_req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    const inventoryId = _req.params.id;
+    const inventoryId = req.params.id;
 
     //using .join method to retrieve the inventory item and match it to its corresponding warehouse name
     const thisInventoy = await knex('inventories')
@@ -37,19 +37,19 @@ router.get("/:id", async (_req, res) => {
   };
 });
 
-router.put('/:id', async(_req, res) => {
+router.put('/:id', async(req, res) => {
 
-  const { warehouse_id, quantity } = _req.body
+  const { warehouse_id, quantity } = req.body
 
   try {
-    const inventoryId = _req.params.id;
+    const inventoryId = req.params.id;
     const checkInventoryId = await knex('inventories').where({ id: inventoryId }).first();
     if (!checkInventoryId) {
       return res.status(404).json(`Inventory with id ${inventoryId} not found.`);
     }
 
     const requiredProps = ["warehouse_id", "item_name", "description", "category", "status", "quantity"]
-    const missingProps = requiredProps.filter(prop => !_req.body.hasOwnProperty(prop));
+    const missingProps = requiredProps.filter(prop => !req.body.hasOwnProperty(prop));
     if (missingProps.length > 0) {
       return res.status(400).json({ error: `Missing properties: ${missingProps.join(', ')}` });
     }
@@ -63,7 +63,7 @@ router.put('/:id', async(_req, res) => {
       return res.status(400).json('Quantity must be a number');
     }
 
-    const newRequest = await knex('inventories').where({ id: inventoryId }).update(_req.body);
+    const newRequest = await knex('inventories').where({ id: inventoryId }).update(req.body);
     if (newRequest) {
       const { updated_at, created_at, ...response} = await knex('inventories').where({ id: inventoryId }).first();
       res.status(200).json(response);
@@ -73,9 +73,9 @@ router.put('/:id', async(_req, res) => {
   }
 });
 
-router.delete('/:id', async (_req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const inventoryId = _req.params.id;
+    const inventoryId = req.params.id;
 
     const inventoryExists = await knex('inventories').where({ id: inventoryId }).first();
     
@@ -91,9 +91,9 @@ router.delete('/:id', async (_req, res) => {
 });
 
 
-router.post("/", async (_req, res) => {
+router.post("/", async (req, res) => {
 
-  const { warehouse_id, quantity } = _req.body
+  const { warehouse_id, quantity } = req.body
 
   try {
     //query mysql information_schema db for instock db inventories table columns configured as notNullable
@@ -109,7 +109,7 @@ router.post("/", async (_req, res) => {
     //Check if a property value is null. To explicitly convert its return value (or any expression in general) 
     //to the corresponding boolean value, use a double NOT operator (!!) or the Boolean constructor.
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_NOT
-    const nullProperty = arrayNotNullable.filter(prop => !!_req.body[prop] === false);
+    const nullProperty = arrayNotNullable.filter(prop => !!req.body[prop] === false);
     if (nullProperty.length > 0) {
       return res.status(400).json({ error: `Properties: ${nullProperty.join(', ')} value must not be null` });
     }
@@ -127,7 +127,7 @@ router.post("/", async (_req, res) => {
       }
     }
 
-    const result = await knex('INVENTORIES').insert(_req.body);
+    const result = await knex('INVENTORIES').insert(req.body);
     const newItemId = result[0];
     const { updated_at, created_at, ...response} = await knex('INVENTORIES').where({ id: newItemId}).first();
     res.status(201).json(response);
