@@ -2,7 +2,7 @@ const knex = require('knex')(require('../knexfile'));
 const express = require("express");
 const router = express.Router();
 
-router.get("/", async(_req, res) => {
+router.get("/", async(req, res) => {
   try{
     const all_warehouses = await knex('warehouses');
     const all_warehouses_noTimeStamps= all_warehouses.map(({created_at, updated_at, ...cleanedData})=>cleanedData); 
@@ -12,10 +12,10 @@ router.get("/", async(_req, res) => {
   }
 });
 
-router.get('/:id', async (_req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const data = await knex('warehouses');
-    const warehouseId = _req.params.id;
+    const warehouseId = req.params.id;
     const warehouse = data.find(warehouse => warehouse.id == warehouseId)
     if (warehouse) {
       const { created_at, updated_at, ...warehouseWithoutTimeStamps } = warehouse;
@@ -28,27 +28,27 @@ router.get('/:id', async (_req, res) => {
   }
 });
 
-router.put('/:id', async(_req, res) => {
+router.put('/:id', async(req, res) => {
   try {
-    const warehouseId = _req.params.id;
+    const warehouseId = req.params.id;
 
     const requiredProps = ["warehouse_name", "street_address", "city", "country", "contact_name", "position", "phone_number","email"]
-    const missingProps = requiredProps.filter(prop => !_req.body.hasOwnProperty(prop));
+    const missingProps = requiredProps.filter(prop => !req.body.hasOwnProperty(prop));
     if (missingProps.length > 0) {
       return res.status(400).json({ error: `Missing properties: ${missingProps.join(', ')}` });
     }
 
     const phoneNumberValidator = /^\d+$/;
-    if (!phoneNumberValidator.test(_req.body.phone_number)) {
+    if (!phoneNumberValidator.test(req.body.phone_number)) {
       return res.status(400).json({ error: "Phone number must contain only integers." });
     }
 
     const emailValidator = /\S+@\S+\.\S+/;
-    if (!emailValidator.test(_req.body.email)) {
+    if (!emailValidator.test(req.body.email)) {
       return res.status(400).json({ error: "Invalid email format." });
     }
 
-    const updateResult = await knex('warehouses').where({ id: warehouseId }).update(_req.body);
+    const updateResult = await knex('warehouses').where({ id: warehouseId }).update(req.body);
     if (updateResult) {
       const updatedWarehouse = await knex('warehouses').where({ id: warehouseId }).first();
       res.status(200).json({ updatedWarehouse });
@@ -109,9 +109,9 @@ router.post("/", (req, res) => {
     res.status(500).json({ error: "Error creating warehouse" });
   });
 });
-router.delete('/:id', async (_req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const warehouseId = _req.params.id;
+    const warehouseId = req.params.id;
 
     const warehouseExists = await knex('warehouses').where({ id: warehouseId}).first();
     if (!warehouseExists) {
