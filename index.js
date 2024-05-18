@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const apiRoutes = require("./routes/endpoints.js");
 const warehouses = require("./routes/warehouses.js");
 const inventories = require("./routes/inventories.js");
 
@@ -17,7 +16,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/api", apiRoutes);
 app.use("/warehouses", warehouses);
 app.use("/inventories", inventories);
 
