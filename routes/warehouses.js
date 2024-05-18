@@ -1,4 +1,4 @@
-const knex = require('knex')(require('../knexfile'));
+const knex = require("knex")(require("../knexfile"));
 const express = require("express");
 const router = express.Router();
 
@@ -7,8 +7,8 @@ router.get("/", async(req, res) => {
     const all_warehouses = await knex('warehouses');
     const all_warehouses_noTimeStamps= all_warehouses.map(({created_at, updated_at, ...cleanedData})=>cleanedData); 
     res.status(200).json(all_warehouses_noTimeStamps);
-  }catch{
-    res.status(500).send('Error getting warehouses');
+  } catch {
+    res.status(500).send("Error getting warehouses");
   }
 });
 
@@ -18,24 +18,53 @@ router.get('/:id', async (req, res) => {
     const warehouseId = req.params.id;
     const warehouse = data.find(warehouse => warehouse.id == warehouseId)
     if (warehouse) {
-      const { created_at, updated_at, ...warehouseWithoutTimeStamps } = warehouse;
-      res.status(200).json(warehouseWithoutTimeStamps)
+      const { created_at, updated_at, ...warehouseWithoutTimeStamps } =
+        warehouse;
+      res.status(200).json(warehouseWithoutTimeStamps);
     } else {
-      res.status(404).json(`Warehouse id: ${warehouseId} does not exist`)
+      res.status(404).json(`Warehouse id: ${warehouseId} does not exist`);
     }
-  } catch(err) {
-    res.status(400).send(`Error retrieving Users: ${err}`)
+  } catch (err) {
+    res.status(400).send(`Error retrieving Users: ${err}`);
   }
 });
 
-router.put('/:id', async(req, res) => {
+router.get("/:id/inventories", (req, res) => {
+  const warehouseId = req.params.id;
+
+  knex("warehouses")
+    .where({ id: warehouseId })
+    .first()
+    .then((warehouse) => {
+      if (warehouse) {
+        return knex("inventories")
+          .where({ warehouse_id: warehouseId })
+          .select("id","item_name", "category", "status", "quantity");
+      } else {
+        res
+          .status(404)
+          .json({ error: `Warehouse with id ${warehouseId} not found.` });
+        return;
+      }
+    })
+    .then((inventories) => {
+      res.status(200).json(inventories);
+    })
+    .catch((error) => {
+      res.status(500).json({ error: `Error retrieving inventories: ${error}` });
+    });
+});
+
+router.put("/:id", async (req, res) => {
   try {
     const warehouseId = req.params.id;
 
     const requiredProps = ["warehouse_name", "street_address", "city", "country", "contact_name", "position", "phone_number","email"]
     const missingProps = requiredProps.filter(prop => !req.body.hasOwnProperty(prop));
     if (missingProps.length > 0) {
-      return res.status(400).json({ error: `Missing properties: ${missingProps.join(', ')}` });
+      return res
+        .status(400)
+        .json({ error: `Missing properties: ${missingProps.join(", ")}` });
     }
 
     const phoneNumberValidator = /^\d+$/;
@@ -50,12 +79,14 @@ router.put('/:id', async(req, res) => {
 
     const updateResult = await knex('warehouses').where({ id: warehouseId }).update(req.body);
     if (updateResult) {
-      const updatedWarehouse = await knex('warehouses').where({ id: warehouseId }).first();
+      const updatedWarehouse = await knex("warehouses")
+        .where({ id: warehouseId })
+        .first();
       res.status(200).json({ updatedWarehouse });
     } else {
       res.status(404).json(`Warehouse with id ${warehouseId} not found.`);
     }
-  } catch(err) {
+  } catch (err) {
     res.status(400).json(`Error updating warehouse: ${err}`);
   }
 });
@@ -69,65 +100,86 @@ router.post("/", (req, res) => {
     contact_name,
     contact_position,
     contact_phone,
-    contact_email
+    contact_email,
   } = req.body;
 
-  const requiredProps = ["warehouse_name", "address", "city", "country", "contact_name", "contact_position", "contact_phone", "contact_email"];
-  const missingProps = requiredProps.filter(prop => !req.body.hasOwnProperty(prop));
+  const requiredProps = [
+    "warehouse_name",
+    "address",
+    "city",
+    "country",
+    "contact_name",
+    "contact_position",
+    "contact_phone",
+    "contact_email",
+  ];
+  const missingProps = requiredProps.filter(
+    (prop) => !req.body.hasOwnProperty(prop)
+  );
   if (missingProps.length > 0) {
-    return res.status(400).json({ error: `Missing properties: ${missingProps.join(', ')}` });
+    return res
+      .status(400)
+      .json({ error: `Missing properties: ${missingProps.join(", ")}` });
   }
 
   const phoneNumberValidator = /^\d+$/;
   if (!phoneNumberValidator.test(req.body.contact_phone)) {
-    console.log(req.body.contact_phone)
-    return res.status(400).json({ error: "Phone number must contain only integers." });
+    console.log(req.body.contact_phone);
+    return res
+      .status(400)
+      .json({ error: "Phone number must contain only integers." });
   }
   const emailValidator = /\S+@\S+\.\S+/;
   if (!emailValidator.test(contact_email)) {
     return res.status(400).json({ error: "Invalid email format." });
   }
 
-  knex("warehouses").insert({
-    warehouse_name,
-    address,
-    city,
-    country,
-    contact_name,
-    contact_position,
-    contact_phone,
-    contact_email
-  })
-  .then(([newWarehouseId]) => {
-    return knex("warehouses").where({ id: newWarehouseId }).first();
-  })
-  .then(newWarehouse => {
-    res.status(201).json(newWarehouse);
-  })
-  .catch(error => {
-    console.error("Error creating warehouse:", error); 
-    res.status(500).json({ error: "Error creating warehouse" });
-  });
+  knex("warehouses")
+    .insert({
+      warehouse_name,
+      address,
+      city,
+      country,
+      contact_name,
+      contact_position,
+      contact_phone,
+      contact_email,
+    })
+    .then(([newWarehouseId]) => {
+      return knex("warehouses").where({ id: newWarehouseId }).first();
+    })
+    .then((newWarehouse) => {
+      res.status(201).json(newWarehouse);
+    })
+    .catch((error) => {
+      console.error("Error creating warehouse:", error);
+      res.status(500).json({ error: "Error creating warehouse" });
+    });
 });
 router.delete('/:id', async (req, res) => {
   try {
     const warehouseId = req.params.id;
 
-    const warehouseExists = await knex('warehouses').where({ id: warehouseId}).first();
+    const warehouseExists = await knex("warehouses")
+      .where({ id: warehouseId })
+      .first();
     if (!warehouseExists) {
-      return res.status(404).json({ error: `Warehouse with id ${warehouseId} does not exist.` });
+      return res
+        .status(404)
+        .json({ error: `Warehouse with id ${warehouseId} does not exist.` });
     } else {
       // deletes inventories associated with warehouse
-      await (knex('inventories').where({ warehouse_id: warehouseId }).select('*').del()
-      // deletes warehouse
-            && knex('warehouses').where({ id: warehouseId }).del()
-            );
+      await (knex("inventories")
+        .where({ warehouse_id: warehouseId })
+        .select("*")
+        .del() &&
+        // deletes warehouse
+        knex("warehouses").where({ id: warehouseId }).del());
       res.sendStatus(204);
     }
   } catch (error) {
     res.status(500).json({ error: `Error deleting warehouse: ${error}` });
   }
-
 });
 
 module.exports = router;
