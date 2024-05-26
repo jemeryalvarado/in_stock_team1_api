@@ -7,7 +7,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
     try {
       const all_inventories = await knex('inventories')
-        .select('inventories.id as id','warehouse_name','item_name','description','category','status','quantity')
+        .select('inventories.id as id','warehouse_name', 'warehouse_id', 'item_name','description','category','status','quantity')
         .join('warehouses','warehouses.id','inventories.warehouse_id');
       const all_inventories_noTimeStamps = all_inventories.map(({created_at, updated_at, ...cleanedData})=>cleanedData);
       res.status(200).json(all_inventories_noTimeStamps);
@@ -105,6 +105,7 @@ router.post("/", async (req, res) => {
       .where('TABLE_SCHEMA', 'instock')
       .andWhere('TABLE_NAME', 'inventories')
       .whereNot('COLUMN_NAME', 'id')
+      .whereNot('COLUMN_NAME', 'quantity')
       .andWhere('IS_NULLABLE', 'NO')
     const arrayNotNullable = notNullable.map(column => column.COLUMN_NAME);
 
