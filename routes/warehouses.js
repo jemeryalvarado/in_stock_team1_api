@@ -63,13 +63,13 @@ router.put("/:id", async (req, res) => {
 
     const requiredProps = [
       "warehouse_name",
-      "street_address",
+      "address",
       "city",
       "country",
       "contact_name",
-      "position",
-      "phone_number",
-      "email",
+      "contact_position",
+      "contact_phone",
+      "contact_email",
     ];
     const missingProps = requiredProps.filter(
       (prop) => !req.body.hasOwnProperty(prop)
@@ -80,15 +80,15 @@ router.put("/:id", async (req, res) => {
         .json({ error: `Missing properties: ${missingProps.join(", ")}` });
     }
 
-    const phoneNumberValidator = /^\d+$/;
-    if (!phoneNumberValidator.test(req.body.phone_number)) {
+    const phoneNumberValidator = /^\+\d{1,3}\s\(\d{3}\)\s\d{3}-\d{4}$/;
+    if (!phoneNumberValidator.test(req.body.contact_phone)) {
       return res
         .status(400)
-        .json({ error: "Phone number must contain only integers." });
+        .json({ error: "Phone number must match the format exactly as it appears in data eg. '+1 (123) 123-1234' ." });
     }
 
     const emailValidator = /\S+@\S+\.\S+/;
-    if (!emailValidator.test(req.body.email)) {
+    if (!emailValidator.test(req.body.contact_email)) {
       return res.status(400).json({ error: "Invalid email format." });
     }
 
